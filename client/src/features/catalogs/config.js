@@ -1,0 +1,235 @@
+import { label } from "../../utils/format";
+export const options = (values) =>
+  values.map((value) => ({ value, label: label(value) }));
+const nameFields = [
+  { name: "run", label: "RUN", max: 12 },
+  { name: "nombres", label: "Nombres", max: 100 },
+  { name: "apellido_paterno", label: "Apellido paterno", max: 80 },
+  { name: "apellido_materno", label: "Apellido materno", max: 80 },
+];
+export const addressFields = [
+  { name: "direccion", label: "Dirección", max: 200, wide: true },
+  { name: "comuna", label: "Comuna", max: 100 },
+  { name: "region", label: "Región", max: 100 },
+];
+export const personFields = nameFields;
+const moneyField = (name, label) => ({
+  name,
+  label,
+  type: "number",
+  min: 0,
+  helperText: "Monto en pesos chilenos",
+});
+export const configs = {
+  empleados: {
+    title: "Empleados",
+    singular: "empleado",
+    section: "Personal",
+    description: "Personas y condiciones de contratación de tu equipo.",
+    pk: "empleado_id",
+    display: "nombre",
+    fields: [
+      ...nameFields,
+      ...addressFields,
+      { name: "cargo", label: "Cargo", max: 120 },
+      {
+        name: "area_trabajo",
+        label: "Área de trabajo",
+        max: 120,
+        required: false,
+      },
+      {
+        name: "fecha_contratacion",
+        label: "Fecha de contratación",
+        type: "date",
+      },
+      moneyField("renta_base", "Renta base (CLP)"),
+      moneyField("bono_por_vuelo", "Bono por vuelo (CLP)"),
+      moneyField("asignacion_movilizacion", "Movilización (CLP)"),
+      moneyField("asignacion_colacion", "Colación (CLP)"),
+    ],
+    columns: [
+      ["nombre", "Empleado"],
+      ["run", "RUN"],
+      ["cargo", "Cargo"],
+      ["fecha_contratacion", "Contratación", "date"],
+      ["renta_base", "Renta base", "money"],
+    ],
+  },
+  pilotos: {
+    title: "Pilotos",
+    singular: "piloto",
+    section: "Personal",
+    description: "Equipo habilitado, certificaciones y asignaciones de vuelo.",
+    pk: "empleado_id",
+    display: "nombre",
+    fields: [
+      {
+        name: "empleado_id",
+        label: "Empleado",
+        resource: "empleados",
+        pk: "empleado_id",
+        wide: true,
+      },
+    ],
+    columns: [
+      ["nombre", "Piloto"],
+      ["run", "RUN"],
+      ["cargo", "Cargo"],
+      ["certificaciones", "Certificaciones"],
+      ["vigentes", "Vigentes"],
+      ["arriendos", "Arriendos"],
+    ],
+  },
+  operadores: {
+    title: "Operadores autorizados",
+    singular: "operador",
+    section: "Clientes",
+    description: "Personas autorizadas para representar a cada empresa.",
+    pk: "operador_id",
+    display: "nombre_completo",
+    fields: [
+      {
+        name: "empresa_id",
+        label: "Empresa",
+        resource: "empresas",
+        pk: "cliente_id",
+        wide: true,
+      },
+      { name: "run", label: "RUN", max: 12 },
+      { name: "nombre_completo", label: "Nombre completo", max: 180 },
+      { name: "fecha_inicio", label: "Inicio de autorización", type: "date" },
+      {
+        name: "fecha_termino",
+        label: "Término de autorización",
+        type: "date",
+        required: false,
+      },
+    ],
+    columns: [
+      ["nombre_completo", "Operador"],
+      ["run", "RUN"],
+      ["empresa", "Empresa"],
+      ["fecha_inicio", "Inicio", "date"],
+      ["fecha_termino", "Término", "date"],
+      ["estado", "Vigencia", "status"],
+    ],
+  },
+  certificaciones: {
+    title: "Certificaciones",
+    singular: "certificación",
+    section: "Personal",
+    description: "Control de habilitaciones y fechas de vencimiento.",
+    pk: "certificacion_id",
+    display: "numero_certificado",
+    fields: [
+      {
+        name: "piloto_id",
+        label: "Piloto",
+        resource: "pilotos",
+        pk: "empleado_id",
+        wide: true,
+      },
+      {
+        name: "tipo",
+        label: "Tipo",
+        options: options(["VLOS", "BVLOS", "NOCTURNA"]),
+      },
+      { name: "numero_certificado", label: "Número de certificado", max: 60 },
+      {
+        name: "entidad_emisora",
+        label: "Entidad emisora",
+        max: 120,
+        wide: true,
+      },
+      { name: "fecha_obtencion", label: "Fecha de obtención", type: "date" },
+      {
+        name: "fecha_vencimiento",
+        label: "Fecha de vencimiento",
+        type: "date",
+      },
+    ],
+    columns: [
+      ["numero_certificado", "Certificado"],
+      ["piloto", "Piloto"],
+      ["tipo", "Tipo"],
+      ["fecha_vencimiento", "Vencimiento", "date"],
+      ["estado", "Estado", "status"],
+    ],
+  },
+  aseguradoras: {
+    title: "Aseguradoras",
+    singular: "aseguradora",
+    section: "Partners",
+    description: "Compañías que respaldan tus operaciones.",
+    pk: "aseguradora_id",
+    display: "razon_social",
+    fields: [
+      { name: "razon_social", label: "Razón social", max: 160, wide: true },
+    ],
+    columns: [
+      ["razon_social", "Razón social"],
+      ["seguros", "Seguros ofrecidos"],
+    ],
+  },
+  proveedores: {
+    title: "Proveedores",
+    singular: "proveedor",
+    section: "Partners",
+    description: "Red de abastecimiento para la flota.",
+    pk: "proveedor_id",
+    display: "razon_social",
+    fields: [
+      { name: "razon_social", label: "Razón social", max: 160, wide: true },
+    ],
+    columns: [["razon_social", "Razón social"]],
+  },
+  seguros: {
+    title: "Seguros de vuelo",
+    singular: "seguro",
+    section: "Partners",
+    description: "Coberturas disponibles para cada arriendo.",
+    pk: "seguro_id",
+    display: "nombre",
+    fields: [
+      { name: "nombre", label: "Nombre del seguro", max: 120, wide: true },
+      {
+        name: "aseguradora_id",
+        label: "Aseguradora",
+        resource: "aseguradoras",
+        pk: "aseguradora_id",
+        display: "razon_social",
+      },
+      moneyField("costo", "Costo (CLP)"),
+    ],
+    columns: [
+      ["nombre", "Seguro"],
+      ["aseguradora", "Aseguradora"],
+      ["costo", "Costo", "money"],
+    ],
+  },
+  accesorios: {
+    title: "Accesorios",
+    singular: "accesorio",
+    section: "Flota",
+    description: "Equipamiento complementario para cada misión.",
+    pk: "accesorio_id",
+    display: "nombre",
+    fields: [
+      { name: "nombre", label: "Nombre del accesorio", max: 120, wide: true },
+      {
+        name: "proveedor_id",
+        label: "Proveedor",
+        resource: "proveedores",
+        pk: "proveedor_id",
+        display: "razon_social",
+      },
+      moneyField("costo", "Costo (CLP)"),
+    ],
+    columns: [
+      ["nombre", "Accesorio"],
+      ["proveedor", "Proveedor"],
+      ["costo", "Costo", "money"],
+    ],
+  },
+};
