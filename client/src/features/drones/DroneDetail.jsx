@@ -14,6 +14,7 @@ import {
 } from "../../components/common/Feedback";
 import { label } from "../../utils/format";
 import RentalHistory from "../arriendos/RentalHistory";
+
 export default function DroneDetail() {
   const { id } = useParams();
   const state = useResource(() => dronesService.get(id), [id]);
@@ -54,14 +55,18 @@ export default function DroneDetail() {
               ["Tipo", label(d.tipo_dron)],
               ["Color", d.color],
               ["Año de fabricación", d.anio_fabricacion],
-              ["Arriendos realizados", d.veces_arrendado],
+              ["Arriendos registrados", d.arriendos_registrados],
+              ["Vuelos iniciados", d.vuelos_iniciados],
               d.tipo_dron === "RECREATIVO"
                 ? ["Autonomía de batería", d.autonomia_bateria_min + " min"]
                 : ["Resolución de cámara", d.resolucion_camara_mp + " MP"],
             ]}
           />
         </Section>
-        <RentalHistory filter={{ dron_id: id }} />
+        <RentalHistory
+          filter={{ dron_id: id }}
+          emptyDescription="Este dron todavía no tiene operaciones de arriendo registradas."
+        />
       </Stack>
     </>
   );
