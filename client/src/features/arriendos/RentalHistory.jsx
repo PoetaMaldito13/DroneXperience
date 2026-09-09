@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@mui/material";
 import { arriendosService } from "../../services";
@@ -6,6 +6,7 @@ import { useResource } from "../../hooks/useResource";
 import EntityTable from "../../components/common/EntityTable";
 import { StatusChip } from "../../components/common/Display";
 import { date, currency } from "../../utils/format";
+
 export const rentalColumns = [
   { key: "arriendo_id", label: "ID", render: (r) => "AR-" + r.arriendo_id },
   { key: "cliente", label: "Cliente" },
@@ -28,13 +29,21 @@ export const rentalColumns = [
     render: (r) => currency(r.costo_total),
   },
 ];
-export default function RentalHistory({ filter }) {
+
+export default function RentalHistory({ filter, emptyDescription }) {
   const [page, setPage] = useState(0),
     [limit, setLimit] = useState(10);
+  const filterKey = JSON.stringify(filter || {});
+
+  useEffect(() => {
+    setPage(0);
+  }, [filterKey]);
+
   const state = useResource(
     () => arriendosService.list({ ...filter, page, limit }),
-    [filter, page, limit],
+    [filterKey, page, limit],
   );
+
   return (
     <EntityTable
       title="Historial de arriendos"
@@ -51,6 +60,11 @@ export default function RentalHistory({ filter }) {
         setLimit(v);
         setPage(0);
       }}
+      emptyTitle="Sin arriendos asociados"
+      emptyDescription={
+        emptyDescription ||
+        "No existen operaciones de arriendo registradas para esta ficha."
+      }
       actions={(r) => (
         <Button component={Link} to={"/arriendos/" + r.arriendo_id}>
           Ver
