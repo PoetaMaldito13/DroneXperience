@@ -2,8 +2,20 @@ import { transaction } from "../config/database.js";
 import { table } from "../utils/query.js";
 import { rentalSelect } from "./rentals.js";
 
-const droneUsage = `SELECT d.*,
-  (SELECT count(*)::int
+const droneUsage = `SELECT
+  d.dron_id,
+  d.identificador,
+  d.marca,
+  d.modelo,
+  d.anio_fabricacion,
+  d.color,
+  d.estado_actual,
+  d.tipo_dron,
+  u.vuelos_iniciados,
+  u.vuelos_iniciados AS veces_arrendado
+ FROM ${table("dron")} d
+ CROSS JOIN LATERAL (
+   SELECT count(*)::int AS vuelos_iniciados
      FROM ${table("arriendo")} a
     WHERE a.dron_id=d.dron_id
       AND EXISTS (
@@ -11,8 +23,8 @@ const droneUsage = `SELECT d.*,
           FROM ${table("historial_estado_arriendo")} h
          WHERE h.arriendo_id=a.arriendo_id
            AND h.tipo_estado IN ('EN_VUELO','FINALIZADO')
-      )) AS vuelos_iniciados
- FROM ${table("dron")} d`;
+      )
+ ) u`;
 
 export function dashboardSummary() {
   return transaction(async (db) => {
