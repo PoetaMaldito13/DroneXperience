@@ -1,7 +1,22 @@
 import { pool, transaction } from "../config/database.js";
 import { table, pageQuery } from "../utils/query.js";
 import { ensure, found } from "../utils/errors.js";
-const select = `SELECT d.*, r.autonomia_bateria_min, p.resolucion_camara_mp FROM ${table("dron")} d LEFT JOIN ${table("dron_recreativo")} r USING (dron_id) LEFT JOIN ${table("dron_profesional")} p USING (dron_id)`;
+
+const select = `SELECT d.*, r.autonomia_bateria_min, p.resolucion_camara_mp,
+  (SELECT count(*)::int FROM ${table("arriendo")} a WHERE a.dron_id=d.dron_id) AS arriendos_registrados,
+  (SELECT count(*)::int
+     FROM ${table("arriendo")} a
+    WHERE a.dron_id=d.dron_id
+      AND EXISTS (
+        SELECT 1
+          FROM ${table("historial_estado_arriendo")} h
+         WHERE h.arriendo_id=a.arriendo_id
+           AND h.tipo_estado IN ('EN_VUELO','FINALIZADO')
+      )) AS vuelos_iniciados
+ FROM ${table("dron")} d
+ LEFT JOIN ${table("dron_recreativo")} r USING (dron_id)
+ LEFT JOIN ${table("dron_profesional")} p USING (dron_id)`;
+
 export function listDrones(q) {
   return pageQuery(
     pool,
@@ -16,16 +31,19 @@ export function listDrones(q) {
       "tipo_dron",
       "estado_actual",
       "anio_fabricacion",
-      "veces_arrendado",
+      "arriendos_registrados",
+      "vuelos_iniciados",
     ],
     "dron_id",
   );
 }
+
 export async function getDrone(id) {
   return found(
     (await pool.query(select + " WHERE d.dron_id=$1", [id])).rows[0],
   );
 }
+
 export async function saveDrone(v, id) {
   return transaction(async (db) => {
     if (id) {
@@ -88,6 +106,7 @@ export async function saveDrone(v, id) {
     return row;
   });
 }
+
 export async function deleteDrone(id) {
   return transaction(async (db) =>
     found(
