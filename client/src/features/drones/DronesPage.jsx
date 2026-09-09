@@ -11,6 +11,7 @@ import { PageHeader, StatusChip } from "../../components/common/Display";
 import { ConfirmDialog, ErrorState } from "../../components/common/Feedback";
 import EntityTable from "../../components/common/EntityTable";
 import { options } from "../catalogs/config";
+
 export const droneTypes = ["RECREATIVO", "PROFESIONAL"];
 export const droneStates = [
   "DISPONIBLE",
@@ -18,6 +19,7 @@ export const droneStates = [
   "MANTENIMIENTO",
   "REPARACION",
 ];
+
 export default function DronesPage() {
   const [search, setSearch] = useState(""),
     [tipo, setTipo] = useState(""),
@@ -62,7 +64,16 @@ export default function DronesPage() {
       render: (r) => <StatusChip value={r.estado_actual} />,
     },
     { key: "anio_fabricacion", label: "Año" },
-    { key: "veces_arrendado", label: "Arriendos", align: "right" },
+    {
+      key: "arriendos_registrados",
+      label: "Arriendos",
+      align: "right",
+    },
+    {
+      key: "vuelos_iniciados",
+      label: "Vuelos",
+      align: "right",
+    },
   ];
   async function remove() {
     setBusy(true);
