@@ -1,0 +1,42 @@
+name: DroneXperience CI
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: dronexperience_01_normalizada
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: ci-ephemeral-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGDATABASE: dronexperience_01_normalizada
+      PGUSER: postgres
+      PGPASSWORD: ci-ephemeral-only
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Load reference model into isolated CI database
+        run: psql -v ON_ERROR_STOP=1 -f database/DroneXperience.sql
+      - run: npm run db:audit
+      - run: npm run lint
+      - run: npm run test:integration
+      - run: npm run build
