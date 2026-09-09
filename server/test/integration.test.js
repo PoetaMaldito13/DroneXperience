@@ -39,6 +39,8 @@ test(
         const rec = await api.get("/api/drones/" + ids.drone.dron_id);
         assert.equal(rec.body.data.autonomia_bateria_min, 32);
         assert.equal(rec.body.data.resolucion_camara_mp, null);
+        assert.equal(rec.body.data.arriendos_registrados, 0);
+        assert.equal(rec.body.data.vuelos_iniciados, 0);
         const pro = await api.get("/api/drones/" + ids.professional.dron_id);
         assert.equal(Number(pro.body.data.resolucion_camara_mp), 48);
         const edit = await api
@@ -116,7 +118,7 @@ test(
         },
       );
       await t.test(
-        "estados, inspecciones, contador y devolución son coherentes",
+        "estados, inspecciones, contador y vistas cruzadas son coherentes",
         async () => {
           const path = "/api/arriendos/" + rental.arriendo_id;
           assert.equal(
@@ -150,10 +152,30 @@ test(
             .post(path + "/estados")
             .send({ estado: "EN_VUELO" });
           assert.equal(start.status, 200, JSON.stringify(start.body));
+
           const drone = (await api.get("/api/drones/" + ids.drone.dron_id)).body
             .data;
           assert.equal(drone.estado_actual, "ARRENDADO");
           assert.equal(drone.veces_arrendado, 1);
+          assert.equal(drone.arriendos_registrados, 1);
+          assert.equal(drone.vuelos_iniciados, 1);
+
+          const historyByDrone = (
+            await api
+              .get("/api/arriendos")
+              .query({ dron_id: ids.drone.dron_id })
+          ).body.data;
+          assert.equal(historyByDrone.total, 1);
+          assert.equal(historyByDrone.items[0].arriendo_id, rental.arriendo_id);
+
+          const dashboard = (await api.get("/api/dashboard/summary")).body.data;
+          const topDrone = dashboard.top.find(
+            (item) => String(item.dron_id) === String(ids.drone.dron_id),
+          );
+          assert.ok(topDrone);
+          assert.equal(topDrone.vuelos_iniciados, 1);
+          assert.equal(topDrone.veces_arrendado, 1);
+
           assert.equal(
             (
               await api
@@ -186,11 +208,12 @@ test(
             detail.historial.filter((h) => !h.fecha_termino).length,
             1,
           );
-          assert.equal(
-            (await api.get("/api/drones/" + ids.drone.dron_id)).body.data
-              .estado_actual,
-            "DISPONIBLE",
-          );
+          const finalDrone = (
+            await api.get("/api/drones/" + ids.drone.dron_id)
+          ).body.data;
+          assert.equal(finalDrone.estado_actual, "DISPONIBLE");
+          assert.equal(finalDrone.arriendos_registrados, 1);
+          assert.equal(finalDrone.vuelos_iniciados, 1);
           assert.equal(
             (
               await api

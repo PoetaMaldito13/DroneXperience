@@ -1,6 +1,31 @@
 import { transaction } from "../config/database.js";
 import { table } from "../utils/query.js";
 import { rentalSelect } from "./rentals.js";
+
+const droneUsage = `SELECT
+  d.dron_id,
+  d.identificador,
+  d.marca,
+  d.modelo,
+  d.anio_fabricacion,
+  d.color,
+  d.estado_actual,
+  d.tipo_dron,
+  u.vuelos_iniciados,
+  u.vuelos_iniciados AS veces_arrendado
+ FROM ${table("dron")} d
+ CROSS JOIN LATERAL (
+   SELECT count(*)::int AS vuelos_iniciados
+     FROM ${table("arriendo")} a
+    WHERE a.dron_id=d.dron_id
+      AND EXISTS (
+        SELECT 1
+          FROM ${table("historial_estado_arriendo")} h
+         WHERE h.arriendo_id=a.arriendo_id
+           AND h.tipo_estado IN ('EN_VUELO','FINALIZADO')
+      )
+ ) u`;
+
 export function dashboardSummary() {
   return transaction(async (db) => {
     await db.query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY");
@@ -24,7 +49,7 @@ export function dashboardSummary() {
     ).rows;
     const top = (
       await db.query(
-        `SELECT * FROM ${table("dron")} WHERE veces_arrendado>0 ORDER BY veces_arrendado DESC,dron_id LIMIT 5`,
+        `SELECT * FROM (${droneUsage}) d WHERE vuelos_iniciados>0 ORDER BY vuelos_iniciados DESC,dron_id LIMIT 5`,
       )
     ).rows;
     const expiring = (
@@ -39,7 +64,7 @@ export function dashboardSummary() {
     ).rows;
     const repairs = (
       await db.query(
-        `SELECT * FROM ${table("dron")} WHERE estado_actual='REPARACION' OR veces_arrendado>=100 ORDER BY veces_arrendado DESC LIMIT 10`,
+        `SELECT * FROM (${droneUsage}) d WHERE estado_actual='REPARACION' OR vuelos_iniciados>=100 ORDER BY vuelos_iniciados DESC,dron_id LIMIT 10`,
       )
     ).rows;
     return {
